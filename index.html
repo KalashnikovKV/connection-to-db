@@ -1,77 +1,24 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Neo4j CRUD App</title>
-  <style>
-    body { font-family: Arial, sans-serif; margin: 20px; }
-    .container { max-width: 600px; margin: auto; }
-    .form-group { margin-bottom: 10px; }
-    input, button { padding: 10px; margin: 5px 0; width: 100%; }
-    button { background-color: #007bff; color: white; border: none; cursor: pointer; }
-    button:hover { background-color: #0056b3; }
-    ul { list-style-type: none; padding: 0; }
-    li { margin: 5px 0; background: #f8f9fa; padding: 10px; border: 1px solid #ddd; }
-  </style>
-</head>
-<body>
-  <div class="container">
-    <h1>Neo4j CRUD App</h1>
-    <div>
-      <h2>Create Person</h2>
-      <div class="form-group">
-        <input id="name" type="text" placeholder="Name">
-        <input id="age" type="number" placeholder="Age">
-        <button onclick="createPerson()">Create</button>
-      </div>
-    </div>
+<h2>Update Node</h2>
+<div class="form-group">
+  <input id="updateLabel" type="text" placeholder="Label (e.g., Person)">
+  <input id="oldProps" type="text" placeholder='Old Properties (e.g., {"name":"John"})'>
+  <input id="newProps" type="text" placeholder='New Properties (e.g., {"age":35})'>
+  <button onclick="updateNode()">Update Node</button>
+</div>
 
-    <div>
-      <h2>Persons List</h2>
-      <ul id="persons"></ul>
-    </div>
-  </div>
+<h2>Delete Node</h2>
+<div class="form-group">
+  <input id="deleteLabel" type="text" placeholder="Label (e.g., Person)">
+  <input id="deleteProps" type="text" placeholder='Properties (e.g., {"name":"John"})'>
+  <button onclick="deleteNode()">Delete Node</button>
+</div>
 
-  <script>
-    const apiUrl = 'http://localhost:5000';
-
-    async function createPerson() {
-      const name = document.getElementById('name').value;
-      const age = document.getElementById('age').value;
-      await fetch(`${apiUrl}/create`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, age: Number(age) })
-      });
-      loadPersons();
-    }
-
-    async function loadPersons() {
-      const response = await fetch(`${apiUrl}/persons`);
-      const persons = await response.json();
-      const personsList = document.getElementById('persons');
-      personsList.innerHTML = '';
-      persons.forEach(person => {
-        const li = document.createElement('li');
-        li.innerHTML = `
-          ${person.name} — ${person.age} years old
-          <button onclick="deletePerson('${person.name}')">Delete</button>
-        `;
-        personsList.appendChild(li);
-      });
-    }
-
-    async function deletePerson(name) {
-      await fetch(`${apiUrl}/delete`, {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name })
-      });
-      loadPersons();
-    }
-
-    document.addEventListener('DOMContentLoaded', loadPersons);
-  </script>
-</body>
-</html>
+<h2>Delete Relationship</h2>
+<div class="form-group">
+  <input id="delFromLabel" type="text" placeholder="From Label (e.g., Person)">
+  <input id="delFromProps" type="text" placeholder='From Properties (e.g., {"name":"John"})'>
+  <input id="delToLabel" type="text" placeholder="To Label (e.g., Movie)">
+  <input id="delToProps" type="text" placeholder='To Properties (e.g., {"name":"Inception"})'>
+  <input id="delRelType" type="text" placeholder="Relationship Type (e.g., ACTED_IN)">
+  <button onclick="deleteRelationship()">Delete Relationship</button>
+</div>

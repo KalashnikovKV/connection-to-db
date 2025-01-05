@@ -1,6 +1,5 @@
 const neo4j = require("neo4j-driver");
 
-// Подключение к Neo4j
 const URI = "neo4j+s://4a2bc87b.databases.neo4j.io";
 const USER = "neo4j";
 const PASSWORD = "LvhxgCVYilA7RtE9PN__vmYhnROfvio0KW8GLQVvjCA";
@@ -20,52 +19,128 @@ let driver;
 
 const session = driver.session();
 
-// CRUD операции
-const createPerson = async (name, age) => {
+// Создание узла
+const createNode = async (label, properties) => {
   try {
     const result = await session.run(
-      "CREATE (p:Person {name: $name, age: $age}) RETURN p",
-      { name, age }
+      `CREATE (n:${label} $properties) RETURN n`,
+      { properties }
     );
-    return result.records[0].get("p").properties;
+    return result.records[0].get("n").properties;
   } catch (error) {
-    console.error("Ошибка при создании узла:", error);
+    console.error(`Ошибка при создании узла ${label}:`, error);
   }
 };
 
-const getPersons = async () => {
+// Чтение всех узлов указанной сущности
+const getNodes = async (label) => {
   try {
-    const result = await session.run("MATCH (p:Person) RETURN p");
-    return result.records.map((record) => record.get("p").properties);
+    const result = await session.run(`MATCH (n:${label}) RETURN n`);
+    return result.records.map((record) => record.get("n").properties);
   } catch (error) {
-    console.error("Ошибка при чтении узлов:", error);
+    console.error(`Ошибка при чтении узлов ${label}:`, error);
   }
 };
 
-const updatePerson = async (name, age) => {
+// Обновление узла
+const updateNode = async (label, oldProps, newProps) => {
   try {
     const result = await session.run(
-      "MATCH (p:Person {name: $name}) SET p.age = $age RETURN p",
-      { name, age }
+      `
+      MATCH (n:${label} {name: $oldName})
+      SET n += $newProps
+      RETURN n
+      `,
+      { oldName: oldProps.name, newProps }
     );
-    return result.records[0].get("p").properties;
+    return result.records[0].get("n").properties;
   } catch (error) {
-    console.error("Ошибка при обновлении узла:", error);
+    console.error(`Ошибка при обновлении узла ${label}:`, error);
   }
 };
 
-const deletePerson = async (name) => {
+// Удаление узла
+const deleteNode = async (label, properties) => {
   try {
-    await session.run("MATCH (p:Person {name: $name}) DELETE p", { name });
-    return { message: `Узел с именем ${name} удален.` };
+    await session.run(
+      `
+      MATCH (n:${label} {name: $name})
+      DETACH DELETE n
+      `,
+      { name: properties.name }
+    );
+    return { message: `Узел ${properties.name} удален.` };
   } catch (error) {
-    console.error("Ошибка при удалении узла:", error);
+    console.error(`Ошибка при удалении узла ${label}:`, error);
+  }
+};
+
+// Создание связи между узлами
+const createRelationship = async (
+  fromLabel,
+  fromProps,
+  toLabel,
+  toProps,
+  relType
+) => {
+  try {
+    const result = await session.run(
+      `
+      MATCH (a:${fromLabel} {name: $fromName})
+      MATCH (b:${toLabel} {name: $toName})
+      CREATE (a)-[r:${relType}]->(b)
+      RETURN r
+      `,
+      { fromName: fromProps.name, toName: toProps.name }
+    );
+    return result.records[0].get("r").type;
+  } catch (error) {
+    console.error(`Ошибка при создании связи ${relType}:`, error);
+  }
+};
+
+// Удаление связи между узлами
+const deleteRelationship = async (
+  fromLabel,
+  fromProps,
+  toLabel,
+  toProps,
+  relType
+) => {
+  try {
+    await session.run(
+      `
+      MATCH (a:${fromLabel} {name: $fromName})-[r:${relType}]->(b:${toLabel} {name: $toName})
+      DELETE r
+      `,
+      { fromName: fromProps.name, toName: toProps.name }
+    );
+    return { message: `Связь ${relType} удалена.` };
+  } catch (error) {
+    console.error(`Ошибка при удалении связи ${relType}:`, error);
+  }
+};
+
+// Получение графа узлов и связей
+const getGraph = async () => {
+  try {
+    const result = await session.run("MATCH (n)-[r]->(m) RETURN n, r, m");
+    return result.records.map((record) => ({
+      from: record.get("n").properties,
+      relationship: record.get("r").type,
+      to: record.get("m").properties,
+    }));
+  } catch (error) {
+    console.error("Ошибка при чтении графа:", error);
   }
 };
 
 module.exports = {
-  createPerson,
-  getPersons,
-  updatePerson,
-  deletePerson,
+  createNode,
+  getNodes,
+  updateNode,
+  deleteNode,
+  createRelationship,
+  deleteRelationship,
+  getGraph,
 };
